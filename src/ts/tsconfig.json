@@ -10,7 +10,7 @@
         "removeComments": true,
         "noLib": false,
         "preserveConstEnums": true,
-        "suppressImplicitAnyIndexErrors": false
+        "suppressImplicitAnyIndexErrors": true
     },
     "compileOnSave": false,
     "buildOnSave": false,
