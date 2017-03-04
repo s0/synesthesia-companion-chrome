@@ -7,7 +7,7 @@
   ],
   "background": {
     "persistent": false,
-    "scripts": ["background.js"]
+    "scripts": ["dist/background.js"]
   },
   "externally_connectable": {
     "matches": ["*://localhost/*"]
