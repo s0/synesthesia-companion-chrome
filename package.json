@@ -6,6 +6,7 @@
   },
   "devDependencies": {
     "@types/chrome": "0.0.40",
+    "@types/jquery": "^2.0.40",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",
     "gulp-sourcemaps": "^1.6.0",

@@ -1,11 +1,3 @@
-interface PlayState {
-  length: number;
-}
-
-interface MediaTab {
-  state?: PlayState;
-}
-
 const media: MediaTab[] = [];
 const listeners: ((state?: PlayState) => void)[] = [];
 
@@ -13,38 +5,6 @@ enum Mode {
   UNKNOWN,
   TAB,
   COMPOSER
-}
-
-interface InitMessage {
-  mode: "tab" | "composer";
-}
-
-interface TabMessage {
-
-}
-
-interface ComposerMessage {
-
-}
-
-function addDemoMedia() {
-  setTimeout(() => {
-    const m: MediaTab = {
-
-    };
-    media.push(m);
-    updateListeners()
-    setTimeout(() => {
-      m.state = {
-        length: 1000
-      };
-      updateListeners();
-    }, 2000);
-    setTimeout(() => {
-      m.state = undefined;
-      updateListeners();
-    }, 4000);
-  }, 2000);
 }
 
 function updateListeners() {
@@ -63,17 +23,16 @@ function updateListener(listener: (state?: PlayState) => void) {
   listener(undefined);
 }
 
-
-chrome.runtime.onConnectExternal.addListener(port => {
+function connectionListener(port: chrome.runtime.Port) {
   let mode = Mode.UNKNOWN;
 
   function initTab() {
+    console.debug('initTab');
     mode = Mode.TAB;
   }
 
   function initComposer() {
     mode = Mode.COMPOSER;
-    addDemoMedia();
   }
 
   function handleTabMessage(msg: TabMessage) {
@@ -132,4 +91,7 @@ chrome.runtime.onConnectExternal.addListener(port => {
         return;
     }
   })
-});
+};
+
+chrome.runtime.onConnectExternal.addListener(connectionListener);
+chrome.runtime.onConnect.addListener(connectionListener);
