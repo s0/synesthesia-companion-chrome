@@ -29,7 +29,8 @@ function throttle(fn: () => void, millis: number): () => void {
   let update_timeout = 0,
   $player = $('#player'),
   lastState: PlayState | null = null,
-  album_art_url: string | null = null;
+  album_art_url: string | null = null,
+  lastSliderValue: number;
 
   // Connect to background script
   const port = chrome.runtime.connect();
@@ -42,7 +43,7 @@ function throttle(fn: () => void, millis: number): () => void {
   port.postMessage(initMessage);
 
   // Listen for changes in DOM
-  $player.bind('DOMSubtreeModified', throttle(update_state, 20));
+  $player.bind('DOMSubtreeModified', update_state);
 
   function control() {
     // Create closure (on demand) for functions requiring control access
@@ -61,8 +62,11 @@ function throttle(fn: () => void, millis: number): () => void {
 
     return {
       update_state: () => {
+        // Don't do anything if DOM is in bad state
+        if ($player_song_info.children().length === 0)
+          return;
         let newState: PlayState | null = null;
-        if ($player_song_info.children().length > 0) {
+        if ($player_song_info.is(':visible')) {
 
           // Meta Info
           const title = $title ? $title.text() : null;
@@ -83,7 +87,11 @@ function throttle(fn: () => void, millis: number): () => void {
           // Play state
           const state: 'playing' | 'paused' = $play_pause.hasClass('playing') ? 'playing' : 'paused';
           const sliderValue = Number($slider.attr('value'));
-          const stateValue = state === 'playing' ? (new Date().getTime() - sliderValue) : sliderValue;
+          const stateValue = state === 'paused' ? sliderValue : (
+            // If sliderValue has not changed, use the previous one, as that's probably more accurate
+            lastState !== null && lastState.state === 'playing' ? lastState.stateValue : new Date().getTime() - sliderValue
+          );
+          lastSliderValue = sliderValue;
 
           newState = {
             length: Number($slider.attr('aria-valuemax')),
