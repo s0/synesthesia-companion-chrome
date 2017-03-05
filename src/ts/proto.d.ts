@@ -12,7 +12,8 @@ interface PlayState {
 }
 
 interface MediaTab {
-  state?: PlayState;
+  state: PlayState | null;
+  art: string | null;
 }
 
 interface InitMessage {
@@ -20,7 +21,12 @@ interface InitMessage {
 }
 
 interface TabMessage {
-
+  updatePlayState?: {
+    state: PlayState | null;
+  };
+  updateAlbumArt?: {
+    art: string | null;
+  };
 }
 
 interface ComposerMessage {

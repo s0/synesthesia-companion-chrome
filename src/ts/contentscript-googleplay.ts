@@ -78,7 +78,10 @@ function throttle(fn: () => void, millis: number): () => void {
 
           if (album_art_url != new_album_art_url) {
             convertImgToBase64(new_album_art_url, base64 => {
-              port.postMessage({key: "album_art", value: base64})
+              const msg: TabMessage = {
+                updateAlbumArt: {art: base64}
+              };
+              port.postMessage(msg)
             }, "image/png");
           }
 
@@ -150,8 +153,10 @@ function throttle(fn: () => void, millis: number): () => void {
   }
 
   function send_state(){
-    console.debug("send_state")
-    port.postMessage({key: "play_state", value: lastState});
+    const msg: TabMessage = {
+      updatePlayState: {state: lastState}
+    };
+    port.postMessage(msg);
   }
 
   function convertImgToBase64(

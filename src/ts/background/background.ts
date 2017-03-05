@@ -1,4 +1,4 @@
-const media: MediaTab[] = [];
+const tabs: MediaTab[] = [];
 const listeners: ((state?: PlayState) => void)[] = [];
 
 enum Mode {
@@ -8,15 +8,14 @@ enum Mode {
 }
 
 function updateListeners() {
-  console.debug('updateListeners', media, listeners);
   for (const l of listeners)
     updateListener(l);
 }
 
 function updateListener(listener: (state?: PlayState) => void) {
-  for (const m of media) {
-    if (m.state) {
-      listener(m.state);
+  for (const t of tabs) {
+    if (t.state) {
+      listener(t.state);
       return;
     }
   }
@@ -25,10 +24,12 @@ function updateListener(listener: (state?: PlayState) => void) {
 
 function connectionListener(port: chrome.runtime.Port) {
   let mode = Mode.UNKNOWN;
+  let tabData: MediaTab;
 
   function initTab() {
     console.debug('initTab');
     mode = Mode.TAB;
+    tabs.push(tabData = {state: null, art: null});
   }
 
   function initComposer() {
@@ -37,6 +38,19 @@ function connectionListener(port: chrome.runtime.Port) {
 
   function handleTabMessage(msg: TabMessage) {
     console.debug('handleTabMessage', msg);
+    let updated = false;
+    if (msg.updatePlayState) {
+      tabData.state = msg.updatePlayState.state;
+      updated = true;
+    }
+    if (msg.updateAlbumArt) {
+      tabData.art = msg.updateAlbumArt.art;
+      updated = true;
+    }
+    if (updated) {
+      // TODO: move this tab to the front of list
+      updateListeners();
+    }
   }
 
   function handleComposerMessage(msg: ComposerMessage) {
