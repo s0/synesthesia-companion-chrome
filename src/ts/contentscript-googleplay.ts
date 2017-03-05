@@ -1,3 +1,27 @@
+/**
+ * Wrap a function to ensure it doesn't get called more than every x amount of
+ * milliseconds.
+ */
+function throttle(fn: () => void, millis: number): () => void {
+  let last = 0;
+  let timeout: number | null = null;
+
+  const call = () => {
+    timeout = null;
+    fn();
+    last = new Date().getTime();
+  }
+
+  return () => {
+    const now = new Date().getTime();
+    if (now >= last + millis) {
+      call();
+    } else if (timeout === null) {
+      timeout = setTimeout(call, millis);
+    }
+  };
+}
+
 ($ => {
 
   console.log("Inserted contentscript");
@@ -18,11 +42,7 @@
   port.postMessage(initMessage);
 
   // Listen for changes in DOM
-  $player.bind('DOMSubtreeModified', () => {
-    clearTimeout(update_timeout);
-    update_timeout = setTimeout(update_state, 50);
-  });
-  update_timeout = setTimeout(update_state, 50);
+  $player.bind('DOMSubtreeModified', throttle(update_state, 20));
 
   function control() {
     // Create closure (on demand) for functions requiring control access
