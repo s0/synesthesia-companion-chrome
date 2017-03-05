@@ -86,13 +86,35 @@
     }
   }
 
-  function stateChanged(old: PlayState | null, newState: PlayState | null) {
-    // If only one is null, it has changed
-    if ((old === null || newState === null) && old !== newState)
+  function stateChanged(oldState: PlayState | null, newState: PlayState | null) {
+    // Only one is null -> changed
+    if ((oldState === null || newState === null) && oldState !== newState)
       return true;
-    // Check properties changes
-    // TODO
-    return true;
+    // Both non-null -> check properties
+    if (oldState !== null && newState !== null) {
+      // Check properties changes
+      return (
+        oldState.length !== newState.length ||
+        oldState.state !== newState.state ||
+        (
+          // If playing, state is different by more than 10 (milliseconds)
+          oldState.state === 'playing' && (
+            oldState.stateValue < newState.stateValue - 10 ||
+            oldState.stateValue > newState.stateValue + 10
+          )
+        ) ||
+        (
+          // If paused, state is different at all
+          oldState.state === 'paused' &&
+          oldState.stateValue != newState.stateValue
+        ) ||
+        oldState.title !== newState.title ||
+        oldState.artist !== newState.artist ||
+        oldState.album !== newState.album
+      );
+    }
+    // Both null -> unchanged
+    return false;
   }
 
   function update_state(){
