@@ -17,7 +17,7 @@ function throttle(fn: () => void, millis: number): () => void {
     if (now >= last + millis) {
       call();
     } else if (timeout === null) {
-      timeout = setTimeout(call, millis);
+      timeout = window.setTimeout(call, millis);
     }
   };
 }
@@ -30,7 +30,12 @@ function throttle(fn: () => void, millis: number): () => void {
   $player = $('#player'),
   lastState: C.PlayState | null = null,
   album_art_url: string | null = null,
-  lastSliderValue: number;
+  paperSliderObserverSet = false,
+  paperSliderValues = {
+    value: 0,
+    effectiveStartTime: 0,
+    max: 0
+  };
 
   // Connect to background script
   const port = chrome.runtime.connect();
@@ -42,8 +47,31 @@ function throttle(fn: () => void, millis: number): () => void {
   };
   port.postMessage(initMessage);
 
-  // Listen for changes in DOM
+  // Listen for changes in subtree of player
   $player.bind('DOMSubtreeModified', update_state);
+
+  // Listen to mutations of paper-slider for accurate timing
+  const paperSliderObserver = new MutationObserver((mutations) => {
+    const now = new Date().getTime(); // get current timestamp ASAP
+    let slider: Node | null = null;
+    for (const m of mutations) {
+      if (m.attributeName === 'value') {
+        slider = m.target;
+        break;
+      }
+    }
+    if (slider) {
+      // Record timestamps
+      const value = Number(slider.attributes.getNamedItem('value').value);
+      paperSliderValues = {
+        value,
+        effectiveStartTime: now - value,
+        max: Number(slider.attributes.getNamedItem('aria-valuemax').value)
+      };
+    }
+    console.log('values:', paperSliderValues);
+    update_state();
+  });
 
   function control() {
     // Create closure (on demand) for functions requiring control access
@@ -57,14 +85,22 @@ function throttle(fn: () => void, millis: number): () => void {
           $player_song_info = $('#playerSongInfo'),
           $title = $player_song_info.find('#currently-playing-title'),
           $artist = $player_song_info.find('#player-artist'),
-          $album = $player_song_info.find('.player-album:first'),
-          $slider = $('paper-slider');
+          $album = $player_song_info.find('.player-album:first');
 
     return {
       update_state: () => {
         // Don't do anything if DOM is in bad state
         if ($player_song_info.children().length === 0)
           return;
+        // Setup the paper observer if it is not already
+        if (!paperSliderObserverSet) {
+          // start the observer
+          const target = $('paper-slider').get(0);
+          if (target) {
+            paperSliderObserver.observe(target, {attributes: true});
+            paperSliderObserverSet = true;
+          }
+        }
         let newState: C.PlayState | null = null;
         if ($player_song_info.is(':visible')) {
 
@@ -89,15 +125,10 @@ function throttle(fn: () => void, millis: number): () => void {
 
           // Play state
           const state: 'playing' | 'paused' = $play_pause.hasClass('playing') ? 'playing' : 'paused';
-          const sliderValue = Number($slider.attr('value'));
-          const stateValue = state === 'paused' ? sliderValue : (
-            // If sliderValue has not changed, use the previous one, as that's probably more accurate
-            lastState !== null && lastState.state === 'playing' ? lastState.stateValue : new Date().getTime() - sliderValue
-          );
-          lastSliderValue = sliderValue;
+          const stateValue = state === 'paused' ? paperSliderValues.value : paperSliderValues.effectiveStartTime;
 
           newState = {
-            length: Number($slider.attr('aria-valuemax')),
+            length: paperSliderValues.max,
             title,
             artist,
             album,
@@ -148,7 +179,7 @@ function throttle(fn: () => void, millis: number): () => void {
     return false;
   }
 
-  function update_state(){
+  function update_state() {
     control().update_state()
   }
 
