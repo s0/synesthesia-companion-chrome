@@ -28,7 +28,7 @@ function throttle(fn: () => void, millis: number): () => void {
 
   let update_timeout = 0,
   $player = $('#player'),
-  lastState: PlayState | null = null,
+  lastState: C.PlayState | null = null,
   album_art_url: string | null = null,
   lastSliderValue: number;
 
@@ -37,7 +37,7 @@ function throttle(fn: () => void, millis: number): () => void {
   port.onMessage.addListener(msg => {
     console.log('msg', msg);
   });
-  const initMessage: InitMessage = {
+  const initMessage: C.InitMessage = {
     mode: 'tab'
   };
   port.postMessage(initMessage);
@@ -65,7 +65,7 @@ function throttle(fn: () => void, millis: number): () => void {
         // Don't do anything if DOM is in bad state
         if ($player_song_info.children().length === 0)
           return;
-        let newState: PlayState | null = null;
+        let newState: C.PlayState | null = null;
         if ($player_song_info.is(':visible')) {
 
           // Meta Info
@@ -78,7 +78,7 @@ function throttle(fn: () => void, millis: number): () => void {
 
           if (album_art_url != new_album_art_url) {
             convertImgToBase64(new_album_art_url, base64 => {
-              const msg: TabMessage = {
+              const msg: C.TabMessage = {
                 updateAlbumArt: {art: base64}
               };
               port.postMessage(msg)
@@ -117,7 +117,7 @@ function throttle(fn: () => void, millis: number): () => void {
     }
   }
 
-  function stateChanged(oldState: PlayState | null, newState: PlayState | null) {
+  function stateChanged(oldState: C.PlayState | null, newState: C.PlayState | null) {
     // Only one is null -> changed
     if ((oldState === null || newState === null) && oldState !== newState)
       return true;
@@ -153,7 +153,7 @@ function throttle(fn: () => void, millis: number): () => void {
   }
 
   function send_state(){
-    const msg: TabMessage = {
+    const msg: C.TabMessage = {
       updatePlayState: {state: lastState}
     };
     port.postMessage(msg);
