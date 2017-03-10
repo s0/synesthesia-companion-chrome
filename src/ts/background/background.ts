@@ -27,7 +27,6 @@ function connectionListener(port: chrome.runtime.Port) {
   let tabData: C.MediaTab;
 
   function initTab() {
-    console.debug('initTab');
     mode = Mode.TAB;
     tabs.push(tabData = {state: null, art: null});
   }
@@ -37,7 +36,6 @@ function connectionListener(port: chrome.runtime.Port) {
   }
 
   function handleTabMessage(msg: C.TabMessage) {
-    console.debug('handleTabMessage', msg);
     let updated = false;
     if (msg.updatePlayState) {
       tabData.state = msg.updatePlayState.state;
@@ -54,17 +52,17 @@ function connectionListener(port: chrome.runtime.Port) {
   }
 
   function handleComposerMessage(msg: C.ComposerMessage) {
-    console.debug('handleComposerMessage', msg);
     listeners.push(listener);
     updateListener(listener);
   }
 
   function handleTabClosed() {
-    console.debug('handleTabClosed()');
+    const i = tabs.indexOf(tabData);
+    tabs.splice(i, 1);
+    updateListeners();
   }
 
   function handleComposerClosed() {
-    console.debug('handleComposerClosed()');
     const i = listeners.indexOf(listener);
     listeners.splice(i, 1);
   }
